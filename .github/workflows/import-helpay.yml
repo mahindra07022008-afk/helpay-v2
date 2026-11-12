@@ -23,6 +23,8 @@ jobs:
           test -f /tmp/helpay-source/helpay-2.0/src/config.js
           test -f /tmp/helpay-source/helpay-2.0/supabase/migrations/202611120001_initial.sql
           cp -a /tmp/helpay-source/helpay-2.0/. .
+          # The Actions token may not add new workflow files. Import app code first.
+          rm -f .github/workflows/ci.yml
           rm HELPAY_V2_REAL_SOURCE_NOV12.zip
       - name: Commit extracted source
         shell: bash
