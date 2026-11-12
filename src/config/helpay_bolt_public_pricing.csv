@@ -1,0 +1,6 @@
+﻿tier_id,discount_range,coupon_value_range,buyer_price_inr
+TIER-1,0–10%,₹0–₹100,10
+TIER-2,>10–50%,>₹100–₹500,20
+TIER-3,>50–70%,>₹500–₹700,30
+TIER-4,>70–100%,">₹700–₹1,000",50
+TIER-5,Not specified,">₹1,000–₹2,000",70
