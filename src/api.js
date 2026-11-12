@@ -50,10 +50,40 @@ export async function getSession() {
   } catch { return null; }
 }
 
-export async function signIn(email, password) {
-  const result = await request('/auth/v1/token?grant_type=password', {method:'POST',body:{email,password}});
+function rememberTokens(result) {
   remember({...result, expires_at:Math.floor(Date.now()/1000)+result.expires_in});
   return result.user;
+}
+
+export async function signIn(email, password) {
+  const result = await request('/auth/v1/token?grant_type=password', {method:'POST',body:{email,password}});
+  return rememberTokens(result);
+}
+
+const PKCE_KEY = 'helpay_pkce_v1';
+const base64Url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+export async function startOAuth(provider) {
+  if (!isLive) throw new Error('Connect Supabase first. See README.md.');
+  const verifier = base64Url(crypto.getRandomValues(new Uint8Array(32)));
+  sessionStorage.setItem(PKCE_KEY, verifier);
+  const challenge = base64Url(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))));
+  const params = new URLSearchParams({provider, redirect_to: location.origin + location.pathname, code_challenge: challenge, code_challenge_method: 's256'});
+  location.assign(`${url}/auth/v1/authorize?${params}`);
+}
+
+export async function completeOAuthRedirect() {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('code');
+  const providerError = params.get('error_description') || params.get('error');
+  if (!code && !providerError) return null;
+  const verifier = sessionStorage.getItem(PKCE_KEY);
+  sessionStorage.removeItem(PKCE_KEY);
+  history.replaceState(null, '', location.pathname + location.hash);
+  if (providerError) throw new Error(providerError);
+  if (!code || !verifier) throw new Error('Sign-in could not be completed. Please try again.');
+  const result = await request('/auth/v1/token?grant_type=pkce', {method:'POST',body:{auth_code:code,code_verifier:verifier}});
+  return rememberTokens(result);
 }
 export async function signUp(email, password) {
   return request('/auth/v1/signup', { method:'POST', body:{email,password} });
