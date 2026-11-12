@@ -1,0 +1,36 @@
+name: Import Helpay Source
+on:
+  push:
+    paths:
+      - ".github/workflows/import-helpay.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract checked Helpay source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f HELPAY_V2_REAL_SOURCE_NOV12.zip
+          unzip -t HELPAY_V2_REAL_SOURCE_NOV12.zip >/dev/null
+          mkdir -p /tmp/helpay-source
+          unzip -q HELPAY_V2_REAL_SOURCE_NOV12.zip -d /tmp/helpay-source
+          test -f /tmp/helpay-source/helpay-2.0/package.json
+          test -f /tmp/helpay-source/helpay-2.0/src/config.js
+          test -f /tmp/helpay-source/helpay-2.0/supabase/migrations/202611120001_initial.sql
+          cp -a /tmp/helpay-source/helpay-2.0/. .
+          rm HELPAY_V2_REAL_SOURCE_NOV12.zip
+      - name: Commit extracted source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Import Helpay 2.0 project source"
+          git push
