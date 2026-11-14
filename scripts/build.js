@@ -1,6 +1,7 @@
 import {existsSync, mkdirSync, cpSync, copyFileSync, rmSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
-const files = ['index.html','_headers','_redirects','robots.txt'];
+// Cloudflare Workers serves SPA routes via wrangler.jsonc; do not publish legacy _redirects fallback.
+const files = ['index.html','_headers','robots.txt'];
 const dirs = ['src','assets'];
 for(const path of [...files,...dirs,'supabase/migrations/202611120001_initial.sql']) if(!existsSync(path))throw new Error(`Missing ${path}`);
 for(const path of ['src/app.js','src/api.js','src/logic.js','src/config.js']) execFileSync(process.execPath,['--check',path],{stdio:'inherit'});
